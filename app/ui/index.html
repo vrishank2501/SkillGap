@@ -53,36 +53,6 @@
 
 <body class="bg-[#0F1117] font-sans text-[#E2E8F0] antialiased min-h-screen selection:bg-[#6366F1]/30 selection:text-white flex flex-col">
 
-  <div id="auth-screen" class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0F1117] px-4 py-8">
-    <section class="w-full max-w-md rounded-2xl border border-[#2D3142] bg-[#161821] p-7 shadow-2xl">
-      <div class="mb-6 flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6366F1] text-white">
-          <span class="material-symbols-outlined">psychology</span>
-        </div>
-        <div>
-          <h1 class="text-lg font-bold text-white">SkillBridge AI</h1>
-          <p class="font-mono text-[10px] uppercase tracking-wider text-[#818CF8]">Your learning workspace</p>
-        </div>
-      </div>
-      <h2 id="auth-title" class="mb-1 text-xl font-semibold">Sign in</h2>
-      <p class="mb-5 text-sm text-[#94A3B8]">Use your account to access your study materials and progress.</p>
-      <div id="auth-config-warning" class="mb-4 hidden rounded-lg border border-amber-700/60 bg-amber-950/40 p-3 text-sm text-amber-200" role="alert"></div>
-      <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-4">
-        <label class="flex flex-col gap-1.5 text-xs font-medium text-[#CBD5E1]">
-          Email
-          <input id="auth-email" type="email" autocomplete="email" required class="rounded-lg border border-[#2D3142] bg-[#0F1117] px-3 py-2.5 text-sm text-white outline-none focus:border-[#818CF8]" placeholder="you@example.com"/>
-        </label>
-        <label class="flex flex-col gap-1.5 text-xs font-medium text-[#CBD5E1]">
-          Password
-          <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required class="rounded-lg border border-[#2D3142] bg-[#0F1117] px-3 py-2.5 text-sm text-white outline-none focus:border-[#818CF8]" placeholder="At least 6 characters"/>
-        </label>
-        <button id="auth-submit" type="submit" class="mt-1 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1F1F1F]">Sign in</button>
-      </form>
-      <p id="auth-feedback" class="mt-4 min-h-5 text-sm text-[#94A3B8]" role="status" aria-live="polite"></p>
-      <button id="auth-mode-toggle" onclick="toggleAuthMode()" class="mt-2 text-sm text-[#A5B4FC] hover:text-white">Create an account</button>
-    </section>
-  </div>
-
   <!-- ==================== FIXED TOP NAVIGATION ==================== -->
   <header class="fixed top-0 left-0 right-0 z-50 bg-[#161821]/95 backdrop-blur-xl border-b border-[#252836] shadow-sm">
     <div class="h-16 w-full px-6 flex items-center justify-between gap-4">
@@ -142,9 +112,6 @@
 
         <button onclick="createNewSession()" class="p-2 rounded-lg border border-[#252836] bg-[#1A1D27] hover:bg-[#1E2230] text-[#94A3B8] hover:text-white transition-colors shrink-0" title="New chat (Ctrl+K)" aria-label="New chat" type="button">
           <span class="material-symbols-outlined text-[18px]">add_comment</span>
-        </button>
-        <button id="sign-out-button" onclick="signOut()" class="hidden p-2 rounded-lg border border-[#252836] bg-[#1A1D27] hover:bg-[#1E2230] text-[#94A3B8] hover:text-white transition-colors shrink-0" title="Sign out" aria-label="Sign out" type="button">
-          <span class="material-symbols-outlined text-[18px]">logout</span>
         </button>
       </div>
 
@@ -313,19 +280,14 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <!-- ==================== CLIENT JAVASCRIPT ==================== -->
   <script>
     // State management
     let currentProvider = "gemini";
     let activeSessionId = "session-" + Date.now();
-    let currentUserId = null;
-    let supabaseClient = null;
-    let authMode = "login";
 
     // Initialize API keys from localStorage
-    window.addEventListener("DOMContentLoaded", async () => {
+    window.addEventListener("DOMContentLoaded", () => {
       const savedGemini = localStorage.getItem("skillbridge_gemini_key");
       const savedOpenAI = localStorage.getItem("skillbridge_openai_key");
       if (savedGemini) {
@@ -344,100 +306,11 @@
         }
       });
 
-      await initializeSupabaseAuth();
+      refreshProgress();
     });
 
-    async function initializeSupabaseAuth() {
-      const configWarning = document.getElementById("auth-config-warning");
-      try {
-        const response = await fetch("/api/auth/config");
-        if (!response.ok) throw new Error("Could not load authentication settings.");
-        const config = await response.json();
-        if (!config.supabase_url || !config.supabase_anon_key) {
-          configWarning.innerText = "Supabase Auth is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env, then restart the app.";
-          configWarning.classList.remove("hidden");
-          document.getElementById("auth-submit").disabled = true;
-          document.getElementById("auth-mode-toggle").disabled = true;
-          return;
-        }
-        if (!window.supabase?.createClient) throw new Error("Supabase Auth could not load. Check your network and reload.");
-
-        supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
-        supabaseClient.auth.onAuthStateChange((_event, session) => {
-          setTimeout(() => applyAuthSession(session), 0);
-        });
-        const { data, error } = await supabaseClient.auth.getSession();
-        if (error) throw error;
-        applyAuthSession(data.session);
-      } catch (error) {
-        configWarning.innerText = error.message || "Could not initialize Supabase Auth.";
-        configWarning.classList.remove("hidden");
-        document.getElementById("auth-submit").disabled = true;
-        document.getElementById("auth-mode-toggle").disabled = true;
-      }
-    }
-
-    function applyAuthSession(session) {
-      const userId = session?.user?.id || null;
-      const changedUser = userId && userId !== currentUserId;
-      currentUserId = userId;
-      document.getElementById("auth-screen").classList.toggle("hidden", Boolean(session));
-      document.getElementById("sign-out-button").classList.toggle("hidden", !session);
-      document.getElementById("sign-out-button").title = session?.user?.email || "Sign out";
-      if (changedUser) refreshProgress();
-      if (!session) createNewSession();
-    }
-
     async function apiFetch(url, options = {}) {
-      if (!supabaseClient) throw new Error("Supabase Auth is not initialized.");
-      const { data, error } = await supabaseClient.auth.getSession();
-      if (error) throw error;
-      if (!data.session) throw new Error("Your session expired. Sign in again.");
-      const headers = new Headers(options.headers || {});
-      headers.set("Authorization", `Bearer ${data.session.access_token}`);
-      return fetch(url, { ...options, headers });
-    }
-
-    function toggleAuthMode() {
-      authMode = authMode === "login" ? "signup" : "login";
-      document.getElementById("auth-title").innerText = authMode === "login" ? "Sign in" : "Create your account";
-      document.getElementById("auth-submit").innerText = authMode === "login" ? "Sign in" : "Create account";
-      document.getElementById("auth-mode-toggle").innerText = authMode === "login" ? "Create an account" : "Already have an account? Sign in";
-      document.getElementById("auth-password").autocomplete = authMode === "login" ? "current-password" : "new-password";
-      document.getElementById("auth-feedback").innerText = "";
-    }
-
-    async function handleAuthSubmit(event) {
-      event.preventDefault();
-      if (!supabaseClient) return;
-      const email = document.getElementById("auth-email").value.trim();
-      const password = document.getElementById("auth-password").value;
-      const submitButton = document.getElementById("auth-submit");
-      const feedback = document.getElementById("auth-feedback");
-      submitButton.disabled = true;
-      feedback.innerText = authMode === "login" ? "Signing in..." : "Creating account...";
-
-      try {
-        const result = authMode === "login"
-          ? await supabaseClient.auth.signInWithPassword({ email, password })
-          : await supabaseClient.auth.signUp({ email, password });
-        if (result.error) throw result.error;
-        if (result.data.session) {
-          applyAuthSession(result.data.session);
-        } else {
-          feedback.innerText = "Account created. Check your email to confirm your address, then sign in.";
-        }
-      } catch (error) {
-        feedback.innerText = error.message || "Authentication failed.";
-      } finally {
-        submitButton.disabled = false;
-      }
-    }
-
-    async function signOut() {
-      if (!supabaseClient) return;
-      const { error } = await supabaseClient.auth.signOut();
-      if (error) showToast(error.message, "error");
+      return fetch(url, options);
     }
 
     function selectProvider(provider) {
@@ -832,7 +705,6 @@
     }
 
     async function refreshProgress() {
-      if (!currentUserId) return;
       try {
         const res = await apiFetch("/api/progress/summary");
         if (!res.ok) return;

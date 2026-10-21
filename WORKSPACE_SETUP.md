@@ -21,25 +21,20 @@ Use this guide when you first open the SkillBridge AI workspace and whenever you
 
    Keep `.env` local. It is gitignored and must not be committed.
 
-4. In `.env`, set the following values from your Supabase project:
+4. Supabase is optional. To enable Supabase-backed document search and progress storage, set the following values in `.env`:
 
    ```dotenv
    SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-   SUPABASE_ANON_KEY=YOUR_PUBLIC_ANON_KEY
    SUPABASE_SERVICE_ROLE_KEY=YOUR_PRIVATE_SERVICE_ROLE_KEY
    ```
 
-   The anon key is used by browser sign-in. The service-role key is backend-only; never put it in frontend code or share it publicly. Keep `SUPABASE_JWT_SECRET` and `DATABASE_URL` blank unless your deployment specifically needs them. The app's default Gemini/OpenAI server keys are optional because users can provide their own keys in the UI.
+   The service-role key is backend-only; never put it in frontend code or share it publicly. You can instead set `SUPABASE_ANON_KEY` if you do not use a service-role key. Keep `DATABASE_URL` blank unless your deployment specifically needs it. The app's default Gemini/OpenAI server keys are optional because users can provide their own keys in the UI.
 
-5. In Supabase, enable the Email provider under Authentication settings. Choose whether email confirmation is required.
-6. In the Supabase SQL Editor, run these migrations in order:
+5. In the Supabase SQL Editor, run the initial schema migration:
 
    ```text
    supabase/migrations/001_initial.sql
-   supabase/migrations/002_auth_profiles.sql
    ```
-
-   The second migration creates profile rows for new signups and backfills existing Auth users. It is safe to rerun.
 
 ## Each Time You Reopen
 
@@ -56,10 +51,11 @@ Use this guide when you first open the SkillBridge AI workspace and whenever you
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
-4. Open <http://localhost:8000>. Sign in or create an account. If Supabase email confirmation is enabled, confirm the address before signing in.
+4. Open <http://localhost:8000>; the workspace loads directly without sign-in.
 5. Add a Gemini or OpenAI API key in the top navigation when you want to use that provider. Demo mode can be selected from the app's provider fallback action and does not require an AI key.
 
 Keep the server terminal running while using the app. Stop it with `Ctrl+C` when finished.
+The app has no user authentication or per-visitor data isolation. Keep it local or restrict network access rather than exposing it as a public multi-user service.
 
 ## Quick Checks
 
@@ -67,10 +63,9 @@ With the server running, these endpoints should respond:
 
 ```bash
 curl -fsS http://127.0.0.1:8000/api/health
-curl -fsS http://127.0.0.1:8000/api/auth/config
 ```
 
-The health endpoint should report `healthy`. The auth config endpoint should return your Supabase URL and anon key; it does not return the service-role key. A protected route should reject requests without a signed-in session token.
+The health endpoint should report `healthy`. API routes are available without an authentication token.
 
 Run the automated tests from the repository root:
 
@@ -80,8 +75,6 @@ python -m pytest tests/ -v
 
 ## Troubleshooting
 
-- **Login says Supabase Auth is not configured:** verify `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env`, then restart the server.
-- **Sign-up succeeds but sign-in does not:** check the user's email confirmation and the Supabase Email provider settings.
-- **Profile insert or data writes fail:** make sure both migrations ran successfully and `SUPABASE_SERVICE_ROLE_KEY` is set in the backend `.env`.
+- **Supabase-backed data writes fail:** verify `SUPABASE_URL` and the backend Supabase key are set, then check that the initial migration ran successfully.
 - **Port 8000 is already in use:** start with `uvicorn app.main:app --reload --host 0.0.0.0 --port 8001` and open <http://localhost:8001>.
 - **Dependency imports fail:** activate `.venv` and run `python -m pip install -r requirements.txt` again.

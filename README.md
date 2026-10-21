@@ -30,7 +30,7 @@
 | **Document Parsing** | PyMuPDF (PDF text extraction + chunking) |
 | **Search** | PostgreSQL Full-Text Search (`tsvector`) |
 | **Frontend** | Single HTML file, Tailwind CSS (CDN), Vanilla JS |
-| **Auth** | Supabase Auth (JWT, Row Level Security) |
+| **Access** | Opens directly to the workspace; no sign-in required |
 
 ---
 
@@ -50,21 +50,20 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env with your Supabase credentials
+# Edit .env with optional Supabase database credentials
 ```
 
 ### 3. Set Up Database
 
-Run both migrations in order in your Supabase SQL editor:
+Supabase-backed document search and progress storage are optional. To enable them, run the initial schema migration in your Supabase SQL editor:
 
 ```
 supabase/migrations/001_initial.sql
-supabase/migrations/002_auth_profiles.sql
 ```
 
-In the Supabase dashboard, enable the Email provider and set `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in `.env`. The anon key initializes browser sign-in; the backend validates each access token with Supabase Auth. The service-role key is used only by the backend and must never be exposed in the browser or committed. New auth users are inserted into `profiles` by the second migration.
+Set `SUPABASE_URL` and either `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_ANON_KEY` in `.env`. These credentials are used only by the backend. Sign-in is not required to use the app.
 
-Users can then create an account or sign in from the app. If email confirmation is enabled in Supabase, they must confirm their address before signing in.
+The app uses a shared local user identity and does not isolate data between visitors. Run it locally or behind an access-controlled network; do not expose it as a public multi-user service.
 
 ### 4. Run the App
 
@@ -154,7 +153,7 @@ See [`.env.example`](.env.example) for all variables. Key ones:
 |---|---|
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (backend only) |
-| `SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_ANON_KEY` | Optional Supabase anon key used by the backend if no service-role key is set |
 | `DATABASE_URL` | Direct PostgreSQL connection string |
 | `DEFAULT_GEMINI_API_KEY` | Optional fallback key (leave empty for BYO-only) |
 | `DEFAULT_OPENAI_API_KEY` | Optional fallback key (leave empty for BYO-only) |
@@ -164,4 +163,3 @@ See [`.env.example`](.env.example) for all variables. Key ones:
 ## 📄 License
 
 MIT
-

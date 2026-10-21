@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
-    SUPABASE_JWT_SECRET: str = ""
     
     # Direct database connection
     DATABASE_URL: str = ""
@@ -36,4 +35,3 @@ settings = Settings()
 
 # Ensure local document storage directory exists
 os.makedirs(settings.DOCUMENT_STORAGE_DIR, exist_ok=True)
-
