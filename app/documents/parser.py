@@ -47,6 +47,9 @@ class DocumentParser:
         """
         Chunks pages into overlapping segments while preserving original page references.
         """
+        if chunk_size_words <= 0 or overlap_words < 0 or overlap_words >= chunk_size_words:
+            raise ValueError("chunk_size_words must be positive and overlap_words must be smaller")
+
         chunks: List[DocumentChunk] = []
         chunk_idx = 0
 

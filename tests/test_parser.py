@@ -17,6 +17,19 @@ def test_document_chunker():
     assert "word0" in chunks[0].content
 
 
+@pytest.mark.parametrize(
+    ("chunk_size_words", "overlap_words"),
+    [(0, 0), (10, -1), (10, 10), (10, 11)],
+)
+def test_document_chunker_rejects_invalid_sizes(chunk_size_words, overlap_words):
+    with pytest.raises(ValueError, match="chunk_size_words must be positive"):
+        document_parser.chunk_document(
+            [{"filename": "guide.txt", "page_number": 1, "text": "some words"}],
+            chunk_size_words=chunk_size_words,
+            overlap_words=overlap_words,
+        )
+
+
 @pytest.mark.asyncio
 async def test_local_document_search_is_isolated_by_user():
     search = DocumentSearchEngine()
