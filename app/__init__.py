@@ -1,0 +1,2 @@
+# SkillBridge AI application package
+

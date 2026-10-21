@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>SkillBridge AI — Cognitive Learning Workspace</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  
+  <!-- Material Symbols Outlined -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  
+  <!-- Tailwind CSS via CDN with form & container query plugins -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "bg-body": "#0F1117",
+            "bg-sidebar": "#161821",
+            "bg-card": "#1A1D27",
+            "bg-card-subtle": "#1E2230",
+            "bg-code": "#111319",
+            "border-soft": "#252836",
+            "border-focus": "#2D3142",
+            "text-primary": "#E2E8F0",
+            "text-secondary": "#94A3B8",
+            "text-meta": "#64748B",
+            "brand-indigo": "#6366F1",
+            "brand-emerald": "#10B981"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0F1117; }
+    ::-webkit-scrollbar-thumb { background: #252836; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #373A4D; }
+    .custom-scroll { scrollbar-width: thin; scrollbar-color: #252836 #0F1117; }
+  </style>
+</head>
+
+<body class="bg-[#0F1117] font-sans text-[#E2E8F0] antialiased min-h-screen selection:bg-[#6366F1]/30 selection:text-white flex flex-col">
+
+  <!-- ==================== FIXED TOP NAVIGATION ==================== -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-[#161821]/95 backdrop-blur-xl border-b border-[#252836] shadow-sm">
+    <div class="h-16 w-full px-6 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#6366F1] to-[#818CF8] flex items-center justify-center text-white shadow-md">
+          <span class="material-symbols-outlined text-[22px]">psychology</span>
+        </div>
+        <div>
+          <span class="font-bold text-lg text-[#E2E8F0] tracking-tight block leading-tight">SkillBridge AI</span>
+          <span class="text-[11px] font-mono text-[#818CF8] tracking-wide block">BYO-AI LEARNING HARNESS</span>
+        </div>
+      </div>
+
+      <!-- Top Nav: BYO-AI API Key Inputs & Model Selection -->
+      <div class="flex items-center gap-3">
+        <!-- Gemini Key Input Container -->
+        <div id="gemini-container" class="flex items-center gap-2 bg-[#1A1D27] px-3 py-1.5 rounded-xl border border-[#252836] shadow-inner transition-all hover:border-[#2D3142]">
+          <div class="flex items-center gap-1.5 cursor-pointer" onclick="selectProvider('gemini')">
+            <span id="gemini-dot" class="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+            <span class="font-mono text-xs text-[#E2E8F0] font-semibold">Gemini</span>
+          </div>
+          <input id="gemini-key" class="bg-transparent border-none outline-none font-mono text-xs text-[#94A3B8] placeholder:text-[#64748B] w-28 tracking-wider" placeholder="AIzaSy..." type="password"/>
+          <select id="gemini-model" class="bg-[#161821] text-[10px] font-mono text-[#818CF8] border border-[#252836] rounded px-1.5 py-0.5 outline-none cursor-pointer">
+            <option value="gemini-3.5-flash" selected>3.5-flash ✦</option>
+            <option value="gemini-flash-latest">flash-latest</option>
+            <option value="gemini-3.8-flash">3.8-flash</option>
+          </select>
+          <button onclick="testKey('gemini')" id="gemini-ping-btn" class="p-1 text-[#64748B] hover:text-[#10B981] rounded transition-colors" title="Test Gemini Key Connection" type="button">
+            <span class="material-symbols-outlined text-[15px]">sensors</span>
+          </button>
+          <button onclick="toggleKeyVisibility('gemini-key')" class="p-1 text-[#64748B] hover:text-[#94A3B8] rounded transition-colors" title="Toggle Visibility" type="button">
+            <span class="material-symbols-outlined text-[15px]">visibility</span>
+          </button>
+        </div>
+
+        <!-- OpenAI Key Input Container -->
+        <div id="openai-container" class="flex items-center gap-2 bg-[#1A1D27] px-3 py-1.5 rounded-xl border border-[#252836] shadow-inner transition-all hover:border-[#2D3142]">
+          <div class="flex items-center gap-1.5 cursor-pointer" onclick="selectProvider('openai')">
+            <span id="openai-dot" class="w-2 h-2 rounded-full bg-[#64748B]"></span>
+            <span class="font-mono text-xs text-[#94A3B8] font-semibold">OpenAI</span>
+          </div>
+          <input id="openai-key" class="bg-transparent border-none outline-none font-mono text-xs text-[#94A3B8] placeholder:text-[#64748B] w-28 tracking-wider" placeholder="sk-..." type="password"/>
+          <select id="openai-model" class="bg-[#161821] text-[10px] font-mono text-[#818CF8] border border-[#252836] rounded px-1.5 py-0.5 outline-none cursor-pointer">
+            <option value="gpt-4o-mini">4o-mini</option>
+            <option value="gpt-4o">gpt-4o</option>
+            <option value="gpt-3.5-turbo">3.5-turbo</option>
+          </select>
+          <button onclick="testKey('openai')" id="openai-ping-btn" class="p-1 text-[#64748B] hover:text-[#10B981] rounded transition-colors" title="Test OpenAI Key Connection" type="button">
+            <span class="material-symbols-outlined text-[15px]">sensors</span>
+          </button>
+          <button onclick="toggleKeyVisibility('openai-key')" class="p-1 text-[#64748B] hover:text-[#94A3B8] rounded transition-colors" title="Toggle Visibility" type="button">
+            <span class="material-symbols-outlined text-[15px]">visibility</span>
+          </button>
+        </div>
+
+        <!-- Demo Mode Pill (Zero API Key Required) -->
+        <button id="demo-btn" onclick="selectProvider('demo')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#252836] bg-[#1A1D27] hover:bg-[#1E2230] text-xs font-mono transition-all text-[#94A3B8]" title="Test all skills without an API key">
+          <span id="demo-dot" class="w-2 h-2 rounded-full bg-[#64748B]"></span>
+          <span>Demo Mode</span>
+        </button>
+
+        <!-- Quick Stats Pill (XP / Streak) -->
+        <button onclick="openProgressModal()" class="flex items-center gap-2 bg-[#1E2230] hover:bg-[#252A3D] px-3 py-1.5 rounded-xl border border-[#2D3142] text-xs font-mono transition-all text-[#34D399] shadow-sm">
+          <span class="material-symbols-outlined text-[16px] text-amber-400">local_fire_department</span>
+          <span id="streak-indicator">1 Day Streak</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <div class="flex-1 flex pt-16">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="fixed left-0 top-16 bottom-0 w-64 bg-[#161821] border-r border-[#252836] z-40 hidden lg:flex flex-col justify-between py-4 px-3 custom-scroll">
+      <div class="flex flex-col h-full gap-4">
+        
+        <!-- New Chat Button -->
+        <div class="px-1">
+          <button onclick="createNewSession()" class="group flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-[#1A1D27] hover:bg-[#1E2230] border border-[#252836] text-[#E2E8F0] transition-all shadow-sm" type="button">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[20px] text-[#818CF8]">add_circle</span>
+              <span class="text-sm font-semibold text-[#E2E8F0]">New Chat</span>
+            </div>
+            <kbd class="font-mono text-[11px] text-[#94A3B8] bg-[#0F1117] border border-[#252836] px-1.5 py-0.5 rounded">⌘K</kbd>
+          </button>
+        </div>
+
+        <!-- Previous Chats Section -->
+        <div class="flex-1 flex flex-col min-h-0 overflow-y-auto px-1 custom-scroll">
+          <div class="flex items-center justify-between px-1 mb-2">
+            <span class="font-mono text-[11px] uppercase tracking-wider text-[#64748B]">Sessions</span>
+            <span class="text-[10px] text-[#818CF8] cursor-pointer hover:underline" onclick="clearSessions()">Clear</span>
+          </div>
+
+          <div id="session-list" class="flex flex-col gap-1.5">
+            <!-- Dynamic session items appear here -->
+            <div id="session-empty" class="text-xs text-[#64748B] italic p-2 text-center">
+              No sessions yet. Type a command or ask a question to begin.
+            </div>
+          </div>
+        </div>
+
+        <!-- Uploaded Document Library Card -->
+        <div class="p-3 bg-[#1A1D27] border border-[#252836] rounded-xl flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="font-mono text-xs text-[#94A3B8] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px] text-[#818CF8]">folder_open</span>
+              Study Library
+            </span>
+            <span id="doc-count-badge" class="bg-[#1E2230] text-[10px] font-mono px-2 py-0.5 rounded text-[#818CF8]">0 files</span>
+          </div>
+          <div id="sidebar-doc-list" class="text-xs text-[#64748B] flex flex-col gap-1 max-h-24 overflow-y-auto custom-scroll">
+            <span class="italic text-[11px]">No study documents uploaded yet.</span>
+          </div>
+          <label class="cursor-pointer flex items-center justify-center gap-1.5 text-xs text-[#818CF8] hover:text-[#A5B4FC] bg-[#161821] hover:bg-[#1E2230] py-1.5 px-2 rounded-lg border border-[#252836] transition-colors">
+            <span class="material-symbols-outlined text-[15px]">upload_file</span>
+            <span>Upload Material</span>
+            <input id="sidebar-file-input" type="file" accept=".pdf,.txt,.md" class="hidden" onchange="handleFileUpload(event)"/>
+          </label>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- CENTER CHAT & CANVAS -->
+    <main class="flex-1 lg:pl-64 min-h-[calc(100vh-4rem)] bg-[#0F1117] flex flex-col">
+      <div class="relative w-full flex-1 max-w-3xl mx-auto flex flex-col justify-between p-6 pb-40">
+        
+        <!-- Conversation Feed -->
+        <div id="chat-feed" class="flex flex-col gap-6">
+
+          <!-- Clean Starter Hero State (Hides when messages start) -->
+          <div id="welcome-banner" class="bg-gradient-to-b from-[#1A1D27] to-[#161821] border border-[#252836] p-6 rounded-2xl shadow-lg flex flex-col gap-5 mt-4">
+            <div class="flex items-center gap-3.5">
+              <div class="w-11 h-11 rounded-xl bg-[#6366F1]/20 border border-[#6366F1]/30 flex items-center justify-center text-[#818CF8]">
+                <span class="material-symbols-outlined text-[26px]">psychology</span>
+              </div>
+              <div>
+                <h1 class="text-xl font-bold text-[#E2E8F0] tracking-tight">SkillBridge AI Learning Workspace</h1>
+                <p class="text-xs text-[#94A3B8]">Connected to your AI provider with modular pedagogical skills.</p>
+              </div>
+            </div>
+
+            <!-- Provider Status Card -->
+            <div class="bg-[#12141C] border border-[#252836] p-3.5 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-2 text-xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-pulse"></span>
+                <span class="text-[#94A3B8]">Active Provider:</span>
+                <strong id="active-provider-label" class="text-white font-mono uppercase">Gemini</strong>
+              </div>
+              <span class="text-[11px] text-[#818CF8] font-mono">Enter your OpenAI or Gemini key above</span>
+            </div>
+
+            <!-- Fast-Action Interactive Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div onclick="insertCommand('/explain ')" class="p-3.5 rounded-xl bg-[#161821] hover:bg-[#1E2230] border border-[#252836] hover:border-[#6366F1]/50 cursor-pointer transition-all flex flex-col gap-1.5 shadow-sm">
+                <div class="flex items-center gap-1.5 text-[#818CF8]">
+                  <span class="material-symbols-outlined text-[18px]">lightbulb</span>
+                  <span class="font-mono text-xs font-bold">/explain</span>
+                </div>
+                <p class="text-xs text-[#94A3B8]">Break down any concept with mental models and examples.</p>
+              </div>
+
+              <div onclick="insertCommand('/quiz ')" class="p-3.5 rounded-xl bg-[#161821] hover:bg-[#1E2230] border border-[#252836] hover:border-[#10B981]/50 cursor-pointer transition-all flex flex-col gap-1.5 shadow-sm">
+                <div class="flex items-center gap-1.5 text-[#34D399]">
+                  <span class="material-symbols-outlined text-[18px]">quiz</span>
+                  <span class="font-mono text-xs font-bold">/quiz</span>
+                </div>
+                <p class="text-xs text-[#94A3B8]">Generate interactive diagnostic questions & track score.</p>
+              </div>
+
+              <div onclick="document.getElementById('dock-file-input').click()" class="p-3.5 rounded-xl bg-[#161821] hover:bg-[#1E2230] border border-[#252836] hover:border-[#38BDF8]/50 cursor-pointer transition-all flex flex-col gap-1.5 shadow-sm">
+                <div class="flex items-center gap-1.5 text-[#38BDF8]">
+                  <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                  <span class="font-mono text-xs font-bold">Upload Material</span>
+                </div>
+                <p class="text-xs text-[#94A3B8]">Index your notes or textbook for cited, grounded answers.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Dynamic Chat Messages Will Be Appended Here -->
+
+        </div>
+
+      </div>
+
+      <!-- ==================== FLOATING COMMAND DOCK ==================== -->
+      <div class="fixed bottom-4 left-0 right-0 lg:left-64 z-30 px-4 md:px-6 flex justify-center pointer-events-none">
+        <div class="w-full max-w-3xl flex flex-col gap-2 pointer-events-auto">
+          
+          <!-- Command Suggestions Pill Shelf -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 px-1 custom-scroll">
+            <button onclick="insertCommand('/quiz')" class="flex-shrink-0 font-mono text-xs bg-[#1A1D27]/90 backdrop-blur-md hover:bg-[#1E2230] hover:text-[#E2E8F0] border border-[#252836] text-[#94A3B8] px-3 py-1 rounded-full shadow-sm transition-all flex items-center gap-1" type="button">
+              <span class="text-[#818CF8] font-bold">/</span>quiz
+            </button>
+            <button onclick="insertCommand('/explain')" class="flex-shrink-0 font-mono text-xs bg-[#1A1D27]/90 backdrop-blur-md hover:bg-[#1E2230] hover:text-[#E2E8F0] border border-[#252836] text-[#94A3B8] px-3 py-1 rounded-full shadow-sm transition-all flex items-center gap-1" type="button">
+              <span class="text-[#818CF8] font-bold">/</span>explain
+            </button>
+            <button onclick="insertCommand('/answer')" class="flex-shrink-0 font-mono text-xs bg-[#1A1D27]/90 backdrop-blur-md hover:bg-[#1E2230] hover:text-[#E2E8F0] border border-[#252836] text-[#94A3B8] px-3 py-1 rounded-full shadow-sm transition-all flex items-center gap-1" type="button">
+              <span class="text-[#818CF8] font-bold">/</span>answer
+            </button>
+            <button onclick="insertCommand('/summarize')" class="flex-shrink-0 font-mono text-xs bg-[#1A1D27]/90 backdrop-blur-md hover:bg-[#1E2230] hover:text-[#E2E8F0] border border-[#252836] text-[#94A3B8] px-3 py-1 rounded-full shadow-sm transition-all flex items-center gap-1" type="button">
+              <span class="text-[#818CF8] font-bold">/</span>summarize
+            </button>
+            <button onclick="insertCommand('/progress')" class="flex-shrink-0 font-mono text-xs bg-[#1A1D27]/90 backdrop-blur-md hover:bg-[#1E2230] hover:text-[#E2E8F0] border border-[#252836] text-[#94A3B8] px-3 py-1 rounded-full shadow-sm transition-all flex items-center gap-1" type="button">
+              <span class="text-[#818CF8] font-bold">/</span>progress
+            </button>
+            <button onclick="insertCommand('/recommend')" class="flex-shrink-0 font-mono text-xs bg-[#1A1D27]/90 backdrop-blur-md hover:bg-[#1E2230] hover:text-[#E2E8F0] border border-[#252836] text-[#94A3B8] px-3 py-1 rounded-full shadow-sm transition-all flex items-center gap-1" type="button">
+              <span class="text-[#818CF8] font-bold">/</span>recommend
+            </button>
+          </div>
+
+          <!-- Primary Input Bar -->
+          <div class="bg-[#1A1D27]/95 backdrop-blur-xl p-2 rounded-2xl border border-[#2B2F42] shadow-2xl flex items-center gap-2 transition-all focus-within:border-[#6366F1]/50 focus-within:ring-2 focus-within:ring-[#6366F1]/20">
+            
+            <!-- File Attach Trigger -->
+            <label class="p-2 text-[#64748B] hover:text-[#94A3B8] rounded-xl hover:bg-[#1E2230] transition-colors flex-shrink-0 cursor-pointer" title="Upload Study Material">
+              <span class="material-symbols-outlined text-[20px]">attach_file</span>
+              <input id="dock-file-input" type="file" accept=".pdf,.txt,.md" class="hidden" onchange="handleFileUpload(event)"/>
+            </label>
+
+            <!-- Dynamic Query Input -->
+            <input id="chat-input" onkeydown="handleInputKeyDown(event)" class="w-full bg-transparent border-none outline-none text-sm text-[#E2E8F0] placeholder:text-[#64748B] px-2 py-1.5 font-sans" placeholder="Ask anything or type / for learning commands (e.g., /quiz 3 questions)..." type="text"/>
+
+            <!-- Send Action Button -->
+            <button id="send-btn" onclick="sendMessage()" aria-label="Send message" class="p-2.5 bg-[#6366F1] text-white rounded-xl hover:bg-[#4F46E5] transition-all flex items-center justify-center shadow-md active:scale-95 flex-shrink-0" type="button">
+              <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ==================== PROGRESS MODAL ==================== -->
+  <div id="progress-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-[#1A1D27] border border-[#2D3142] rounded-2xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between pb-2 border-b border-[#252836]">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#818CF8] text-[24px]">insights</span>
+          <h2 class="text-lg font-bold text-[#E2E8F0]">Your Learning Progress</h2>
+        </div>
+        <button onclick="closeProgressModal()" class="text-[#64748B] hover:text-[#E2E8F0]">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3" id="modal-metrics">
+        <div class="bg-[#161821] p-3 rounded-xl border border-[#252836]">
+          <span class="text-xs text-[#64748B] block">Quizzes Completed</span>
+          <span id="metric-quizzes" class="text-xl font-bold text-[#E2E8F0]">0</span>
+        </div>
+        <div class="bg-[#161821] p-3 rounded-xl border border-[#252836]">
+          <span class="text-xs text-[#64748B] block">Average Accuracy</span>
+          <span id="metric-accuracy" class="text-xl font-bold text-[#34D399]">0%</span>
+        </div>
+        <div class="bg-[#161821] p-3 rounded-xl border border-[#252836]">
+          <span class="text-xs text-[#64748B] block">Topics Mastered</span>
+          <span id="metric-topics" class="text-xl font-bold text-[#818CF8]">0</span>
+        </div>
+        <div class="bg-[#161821] p-3 rounded-xl border border-[#252836]">
+          <span class="text-xs text-[#64748B] block">Study Streak</span>
+          <span id="metric-streak" class="text-xl font-bold text-amber-400">1 Day</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-mono uppercase text-[#64748B]">Recent Topics</span>
+        <div id="modal-recent-topics" class="text-xs text-[#94A3B8] flex flex-col gap-1 max-h-36 overflow-y-auto custom-scroll">
+          <span class="italic text-[11px]">No quiz attempts recorded yet.</span>
+        </div>
+      </div>
+
+      <button onclick="closeProgressModal()" class="w-full py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white text-xs font-semibold rounded-xl transition-all shadow-md mt-2">
+        Continue Learning
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== CLIENT JAVASCRIPT ==================== -->
+  <script>
+    // State management
+    let currentProvider = "gemini";
+    let activeSessionId = "session-" + Date.now();
+    let currentUserId = "dev-user-01";
+    let sessionCount = 0;
+
+    // Initialize API keys from localStorage
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedGemini = localStorage.getItem("skillbridge_gemini_key");
+      const savedOpenAI = localStorage.getItem("skillbridge_openai_key");
+      if (savedGemini) {
+        document.getElementById("gemini-key").value = savedGemini;
+        selectProvider("gemini");
+      }
+      if (savedOpenAI) {
+        document.getElementById("openai-key").value = savedOpenAI;
+        if (!savedGemini) selectProvider("openai");
+      }
+      refreshDocumentList();
+      refreshProgress();
+
+      // Keyboard shortcut ⌘K / Ctrl+K
+      document.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+          e.preventDefault();
+          createNewSession();
+        }
+      });
+    });
+
+    function selectProvider(provider) {
+      currentProvider = provider;
+      const geminiDot = document.getElementById("gemini-dot");
+      const openaiDot = document.getElementById("openai-dot");
+      const demoDot = document.getElementById("demo-dot");
+      const geminiContainer = document.getElementById("gemini-container");
+      const openaiContainer = document.getElementById("openai-container");
+      const demoBtn = document.getElementById("demo-btn");
+      const label = document.getElementById("active-provider-label");
+
+      // Reset active styles
+      if (geminiDot) geminiDot.className = "w-2 h-2 rounded-full bg-[#64748B]";
+      if (openaiDot) openaiDot.className = "w-2 h-2 rounded-full bg-[#64748B]";
+      if (demoDot) demoDot.className = "w-2 h-2 rounded-full bg-[#64748B]";
+      if (geminiContainer) geminiContainer.classList.remove("border-[#10B981]/50");
+      if (openaiContainer) openaiContainer.classList.remove("border-[#10B981]/50");
+      if (demoBtn) demoBtn.classList.remove("border-[#818CF8]/60", "text-white", "bg-[#1E2230]");
+
+      if (provider === "gemini") {
+        if (geminiDot) geminiDot.className = "w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+        if (geminiContainer) geminiContainer.classList.add("border-[#10B981]/50");
+        if (label) label.innerText = "Gemini";
+      } else if (provider === "openai") {
+        if (openaiDot) openaiDot.className = "w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+        if (openaiContainer) openaiContainer.classList.add("border-[#10B981]/50");
+        if (label) label.innerText = "OpenAI";
+      } else if (provider === "demo") {
+        if (demoDot) demoDot.className = "w-2 h-2 rounded-full bg-[#818CF8] shadow-[0_0_8px_rgba(129,140,248,0.7)]";
+        if (demoBtn) demoBtn.classList.add("border-[#818CF8]/60", "text-white", "bg-[#1E2230]");
+        if (label) label.innerText = "Demo Mode (Local)";
+      }
+    }
+
+    function toggleKeyVisibility(id) {
+      const el = document.getElementById(id);
+      el.type = el.type === "password" ? "text" : "password";
+      if (id === "gemini-key") localStorage.setItem("skillbridge_gemini_key", el.value);
+      if (id === "openai-key") localStorage.setItem("skillbridge_openai_key", el.value);
+    }
+
+    document.getElementById("gemini-key").addEventListener("change", (e) => {
+      localStorage.setItem("skillbridge_gemini_key", e.target.value.trim());
+      if (e.target.value.trim()) {
+        selectProvider("gemini");
+        testKey("gemini");
+      }
+    });
+    document.getElementById("openai-key").addEventListener("change", (e) => {
+      localStorage.setItem("skillbridge_openai_key", e.target.value.trim());
+      if (e.target.value.trim()) {
+        selectProvider("openai");
+        testKey("openai");
+      }
+    });
+
+    async function testKey(provider) {
+      const keyInput = document.getElementById(`${provider}-key`);
+      const keyVal = keyInput.value.trim();
+      const modelSelect = document.getElementById(`${provider}-model`);
+      const modelVal = modelSelect ? modelSelect.value : null;
+      const dot = document.getElementById(`${provider}-dot`);
+      const btn = document.getElementById(`${provider}-ping-btn`);
+
+      if (!keyVal) {
+        showToast(`Please enter an API key for ${provider.toUpperCase()} first.`, "error");
+        return;
+      }
+
+      const origBtnContent = btn.innerHTML;
+      btn.innerHTML = `<span class="material-symbols-outlined text-[15px] animate-spin">refresh</span>`;
+
+      try {
+        const res = await fetch("/api/providers/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider: provider,
+            api_key: keyVal,
+            model: modelVal
+          })
+        });
+
+        const data = await res.json();
+        btn.innerHTML = origBtnContent;
+
+        if (data.valid) {
+          dot.className = "w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_10px_rgba(16,185,129,0.9)]";
+          selectProvider(provider);
+          showToast(`✅ ${provider.toUpperCase()} Key Valid! (${data.latency_ms}ms)`, "success");
+        } else {
+          dot.className = "w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)]";
+          showToast(`❌ ${data.error || "Invalid key"}`, "error");
+        }
+      } catch (err) {
+        btn.innerHTML = origBtnContent;
+        showToast(`❌ Connection error: ${err.message}`, "error");
+      }
+    }
+
+    function showToast(message, type = "info") {
+      let toast = document.getElementById("ui-toast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "ui-toast";
+        document.body.appendChild(toast);
+      }
+      if (type === "success") {
+        toast.className = "fixed top-20 right-6 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-mono transition-all duration-300 bg-[#0F291E] border border-[#10B981] text-[#34D399] flex items-center gap-2";
+      } else if (type === "error") {
+        toast.className = "fixed top-20 right-6 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-mono transition-all duration-300 bg-red-950 border border-red-600 text-red-200 flex items-center gap-2";
+      } else {
+        toast.className = "fixed top-20 right-6 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-mono transition-all duration-300 bg-[#1E2230] border border-[#2D3142] text-[#E2E8F0] flex items-center gap-2";
+      }
+      toast.innerText = message;
+      toast.style.display = "flex";
+      setTimeout(() => { toast.style.display = "none"; }, 4000);
+    }
+
+    function insertCommand(cmd) {
+      const input = document.getElementById("chat-input");
+      input.value = cmd;
+      input.focus();
+    }
+
+    function handleInputKeyDown(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("chat-input");
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = "";
+      
+      // Ensure session is registered in sidebar
+      registerActiveSession(text);
+      appendUserMessage(text);
+
+      const geminiKey = document.getElementById("gemini-key").value.trim();
+      const openaiKey = document.getElementById("openai-key").value.trim();
+      const activeKey = currentProvider === "gemini" ? geminiKey : openaiKey;
+      const geminiModel = document.getElementById("gemini-model")?.value;
+      const openaiModel = document.getElementById("openai-model")?.value;
+      const activeModel = currentProvider === "gemini" ? geminiModel : openaiModel;
+
+      if (currentProvider !== "demo" && (!activeKey || activeKey === "AIzaSy..." || activeKey === "sk-...")) {
+        appendErrorMessage(`⚠️ Please enter your ${currentProvider.toUpperCase()} API key in the top navigation bar, or click 'Demo Mode' to test without an API key.`);
+        const targetInput = document.getElementById(`${currentProvider}-key`);
+        if (targetInput) targetInput.focus();
+        return;
+      }
+
+      const payload = {
+        message: text,
+        provider: currentProvider,
+        api_key: activeKey,
+        model: activeModel,
+        session_id: activeSessionId,
+        user_id: currentUserId,
+      };
+
+      const loaderId = appendTypingIndicator();
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        removeTypingIndicator(loaderId);
+
+        if (!res.ok) {
+          let errorDetail = "Failed to generate response.";
+          try {
+            const err = await res.json();
+            errorDetail = err.detail || err.error || errorDetail;
+          } catch (_) {
+            try {
+              const raw = await res.text();
+              errorDetail = raw || `Server error (${res.status})`;
+            } catch (_) {}
+          }
+          appendErrorMessage(errorDetail);
+          return;
+        }
+
+        const data = await res.json();
+        appendAssistantResponse(data);
+      } catch (err) {
+        removeTypingIndicator(loaderId);
+        appendErrorMessage("Network error: " + err.message);
+      }
+    }
+
+    function registerActiveSession(firstMessage) {
+      const emptyEl = document.getElementById("session-empty");
+      if (emptyEl) emptyEl.remove();
+
+      if (sessionCount === 0) {
+        sessionCount++;
+        const list = document.getElementById("session-list");
+        const title = firstMessage.length > 25 ? firstMessage.substring(0, 25) + "..." : firstMessage;
+        const item = document.createElement("div");
+        item.className = "flex items-center justify-between p-2.5 rounded-xl bg-[#1E2230] border border-[#2D3142] text-[#E2E8F0] font-medium cursor-pointer shadow-sm";
+        item.innerHTML = `
+          <div class="flex flex-col min-w-0 pr-2">
+            <span class="text-sm truncate font-semibold text-[#E2E8F0]">${escapeHtml(title)}</span>
+            <span class="font-mono text-[11px] text-[#818CF8]">Active Session</span>
+          </div>
+          <span class="material-symbols-outlined text-[18px] text-[#818CF8]">chat_bubble</span>
+        `;
+        list.prepend(item);
+      }
+    }
+
+    function appendUserMessage(text) {
+      const feed = document.getElementById("chat-feed");
+      const div = document.createElement("div");
+      div.className = "flex flex-col items-end gap-1";
+      div.innerHTML = `
+        <div class="flex items-center gap-2 text-[#64748B] mb-1">
+          <span class="text-xs font-medium text-[#94A3B8]">You</span>
+          <span class="font-mono text-[11px] text-[#64748B]">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        <div class="bg-[#1E2230] border border-[#2D3142] text-[#E2E8F0] p-4 rounded-2xl rounded-tr-sm max-w-[85%] shadow-sm text-sm leading-relaxed">
+          ${escapeHtml(text)}
+        </div>
+      `;
+      feed.appendChild(div);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function appendAssistantResponse(data) {
+      const feed = document.getElementById("chat-feed");
+      const div = document.createElement("div");
+      div.className = "flex flex-col items-start gap-2 w-full";
+
+      let structuredHtml = "";
+
+      // Structured quiz card
+      if (data.command_used === "/quiz" && data.structured_data && data.structured_data.questions) {
+        const quiz = data.structured_data;
+        structuredHtml = `
+          <div class="p-4 rounded-xl bg-[#1E2230] border border-[#2D3142] flex flex-col gap-3 mt-2">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-xs text-[#34D399] uppercase font-semibold tracking-wider">Diagnostic Assessment • ${escapeHtml(quiz.topic || 'Assessment')}</span>
+              <span class="font-mono text-xs text-[#64748B]">${quiz.questions.length} Questions</span>
+            </div>
+            ${quiz.questions.map((q, idx) => `
+              <div class="flex flex-col gap-2 mt-2">
+                <h4 class="text-sm font-semibold text-[#E2E8F0]">${idx + 1}. ${escapeHtml(q.question)}</h4>
+                <div class="flex flex-col gap-1.5">
+                  ${(q.options || []).map(opt => `
+                    <label onclick="submitQuizOption(this, '${escapeHtml(opt)}', '${escapeHtml(q.correct_option)}', '${escapeHtml(quiz.topic)}')" class="flex items-center gap-3 p-2.5 rounded-lg bg-[#1A1D27] border border-[#252836] cursor-pointer hover:border-[#2D3142] hover:bg-[#202432] transition-colors">
+                      <input class="accent-indigo-500 w-4 h-4 cursor-pointer" name="q_${idx}" type="radio"/>
+                      <span class="font-mono text-xs text-[#94A3B8]">${escapeHtml(opt)}</span>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // Grounded citations badge
+      let citationsHtml = "";
+      if (data.citations && data.citations.length > 0) {
+        const c = data.citations[0];
+        citationsHtml = `
+          <div class="flex items-center justify-between p-2.5 rounded-lg bg-[#1E2230] border border-[#252836] mt-2">
+            <div class="flex items-center gap-2 text-[#94A3B8]">
+              <span class="material-symbols-outlined text-[16px] text-[#818CF8]">verified</span>
+              <span class="font-mono text-xs font-medium">Source: <strong class="text-[#E2E8F0]">${escapeHtml(c.filename)}</strong> • Page ${c.page_number}</span>
+            </div>
+            <span class="text-[11px] text-[#818CF8] bg-[#161821] px-2 py-0.5 rounded font-mono">Grounded</span>
+          </div>
+        `;
+      }
+
+      div.innerHTML = `
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 rounded-md bg-[#6366F1] flex items-center justify-center text-white shadow-sm">
+            <span class="material-symbols-outlined text-[14px]">psychology</span>
+          </div>
+          <span class="text-xs font-semibold text-[#E2E8F0]">SkillBridge AI</span>
+          <span class="font-mono text-[11px] text-[#64748B]">${data.skill_name || 'Harness'}</span>
+        </div>
+        <div class="w-full bg-[#1A1D27] border border-[#2B2F42] p-5 rounded-2xl rounded-tl-sm shadow-md flex flex-col gap-3">
+          <div class="prose prose-invert max-w-none text-sm text-[#E2E8F0] leading-relaxed">
+            ${renderMarkdown(data.response)}
+          </div>
+          ${structuredHtml}
+          ${citationsHtml}
+        </div>
+      `;
+      feed.appendChild(div);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function appendTypingIndicator() {
+      const feed = document.getElementById("chat-feed");
+      const id = "loader-" + Date.now();
+      const div = document.createElement("div");
+      div.id = id;
+      div.className = "flex items-center gap-2 text-xs text-[#818CF8] font-mono py-2";
+      div.innerHTML = `
+        <span class="material-symbols-outlined animate-spin text-[16px]">sync</span>
+        <span>Harness synthesizing response...</span>
+      `;
+      feed.appendChild(div);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      return id;
+    }
+
+    function removeTypingIndicator(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    function appendErrorMessage(msg) {
+      const feed = document.getElementById("chat-feed");
+      const div = document.createElement("div");
+      div.className = "p-4 rounded-xl bg-red-950/40 border border-red-800/50 text-red-200 text-xs flex flex-col gap-2.5 shadow-lg";
+
+      let actionButtons = "";
+      if (msg.includes("OpenAI Quota") || msg.includes("quota") || msg.includes("insufficient_quota")) {
+        actionButtons = `
+          <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-red-800/40 mt-1">
+            <button onclick="selectProvider('demo'); sendMessage();" class="px-3 py-1.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-lg font-mono text-xs font-semibold transition-all shadow-md flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">bolt</span> Switch to Demo Mode (Works Instantly)
+            </button>
+            <button onclick="selectProvider('gemini')" class="px-3 py-1.5 bg-[#10B981] hover:bg-[#059669] text-white rounded-lg font-mono text-xs font-semibold transition-all shadow-md flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">auto_awesome</span> Switch to Gemini (Free)
+            </button>
+          </div>
+        `;
+      }
+
+      div.innerHTML = `
+        <div class="flex items-start gap-2.5">
+          <span class="material-symbols-outlined text-[20px] text-red-400 flex-shrink-0 mt-0.5">error</span>
+          <div class="flex-1 leading-relaxed text-[#FECACA] font-sans text-xs">
+            ${escapeHtml(msg)}
+          </div>
+        </div>
+        ${actionButtons}
+      `;
+      feed.appendChild(div);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    async function submitQuizOption(labelElement, selectedOption, correctOption, topic) {
+      const isCorrect = selectedOption.trim().startsWith(correctOption) || selectedOption.includes(correctOption);
+      if (isCorrect) {
+        labelElement.className = "flex items-center gap-3 p-2.5 rounded-lg bg-[#0F291E] border border-[#34D399]/60 text-[#34D399] cursor-pointer";
+      } else {
+        labelElement.className = "flex items-center gap-3 p-2.5 rounded-lg bg-red-950/40 border border-red-800 text-red-300 cursor-pointer";
+      }
+
+      try {
+        await fetch("/api/progress/quiz", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: currentUserId,
+            topic: topic || "Quiz",
+            score: isCorrect ? 1 : 0,
+            total_questions: 1,
+            answers_json: { selected: selectedOption, correct: correctOption }
+          })
+        });
+        refreshProgress();
+      } catch (err) {
+        console.warn("Could not save quiz attempt:", err);
+      }
+    }
+
+    async function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("user_id", currentUserId);
+
+      registerActiveSession(`Uploaded ${file.name}`);
+      appendUserMessage(`📎 Uploaded document: ${file.name}`);
+      const loaderId = appendTypingIndicator();
+
+      try {
+        const res = await fetch("/api/documents/upload", {
+          method: "POST",
+          body: formData
+        });
+        removeTypingIndicator(loaderId);
+
+        if (res.ok) {
+          const data = await res.json();
+          appendAssistantResponse({
+            response: `✅ **Successfully indexed \`${file.name}\`**\n- Extracted Pages: ${data.document.total_pages}\n- Indexed Chunks: ${data.document.total_chunks}\n\nYou can now ask questions about this material using \`/answer <question>\` or \`/quiz ${file.name}\`.`,
+            command_used: "/upload",
+            skill_name: "Document Ingestion"
+          });
+          refreshDocumentList();
+        } else {
+          appendErrorMessage("Failed to upload document.");
+        }
+      } catch (err) {
+        removeTypingIndicator(loaderId);
+        appendErrorMessage("Upload error: " + err.message);
+      }
+    }
+
+    async function refreshDocumentList() {
+      try {
+        const res = await fetch(`/api/documents/?user_id=${currentUserId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const docs = data.documents || [];
+        document.getElementById("doc-count-badge").innerText = `${docs.length} files`;
+        const listEl = document.getElementById("sidebar-doc-list");
+        if (docs.length === 0) {
+          listEl.innerHTML = `<span class="italic text-[11px]">No study documents uploaded yet.</span>`;
+        } else {
+          listEl.innerHTML = docs.map(d => `
+            <div class="flex items-center justify-between p-1.5 rounded bg-[#161821] px-2 truncate border border-[#252836]">
+              <span class="truncate font-mono text-[11px] text-[#E2E8F0]">${escapeHtml(d.filename)}</span>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.warn("Failed to fetch documents:", err);
+      }
+    }
+
+    async function refreshProgress() {
+      try {
+        const res = await fetch(`/api/progress/summary?user_id=${currentUserId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById("streak-indicator").innerText = `${data.active_streak_days || 1} Day Streak`;
+        document.getElementById("metric-quizzes").innerText = data.quizzes_attempted || 0;
+        document.getElementById("metric-accuracy").innerText = `${data.average_score || 0}%`;
+        document.getElementById("metric-topics").innerText = data.completed_topics?.length || 0;
+        document.getElementById("metric-streak").innerText = `${data.active_streak_days || 1} Days`;
+
+        const recentEl = document.getElementById("modal-recent-topics");
+        if (data.all_topics && data.all_topics.length > 0) {
+          recentEl.innerHTML = data.all_topics.map(t => `
+            <div class="flex items-center justify-between p-2 rounded bg-[#161821] border border-[#252836]">
+              <span class="font-medium text-[#E2E8F0]">${escapeHtml(t.topic_name)}</span>
+              <span class="font-mono text-[11px] ${t.best_score >= 70 ? 'text-[#34D399]' : 'text-amber-400'}">${t.best_score}%</span>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.warn("Failed to refresh progress:", err);
+      }
+    }
+
+    function createNewSession() {
+      activeSessionId = "session-" + Date.now();
+      sessionCount = 0;
+      const feed = document.getElementById("chat-feed");
+      // Keep only the welcome banner
+      const banner = document.getElementById("welcome-banner");
+      feed.innerHTML = "";
+      if (banner) feed.appendChild(banner);
+      document.getElementById("chat-input").focus();
+    }
+
+    function clearSessions() {
+      const list = document.getElementById("session-list");
+      list.innerHTML = `<div id="session-empty" class="text-xs text-[#64748B] italic p-2 text-center">No sessions yet. Type a command to begin.</div>`;
+      createNewSession();
+    }
+
+    function openProgressModal() {
+      refreshProgress();
+      const modal = document.getElementById("progress-modal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeProgressModal() {
+      const modal = document.getElementById("progress-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function copyCode(btn) {
+      const code = btn.closest(".overflow-hidden").querySelector("code").innerText;
+      navigator.clipboard.writeText(code);
+      btn.querySelector("span:last-child").innerText = "Copied!";
+      setTimeout(() => { btn.querySelector("span:last-child").innerText = "Copy"; }, 2000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function renderMarkdown(md) {
+      if (!md) return "";
+      let html = md
+        .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-[#E2E8F0] mt-3 mb-1">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-[#E2E8F0] mt-4 mb-2">$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold text-[#E2E8F0] mt-4 mb-2">$1</h1>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-semibold text-white">$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em class="italic">$1</em>')
+        .replace(/```([\s\S]*?)```/gim, '<pre class="bg-[#111319] border border-[#252836] p-3 rounded-xl overflow-x-auto my-2 text-xs font-mono text-[#E2E8F0]"><code>$1</code></pre>')
+        .replace(/`([^`]+)`/gim, '<code class="bg-[#111319] text-[#818CF8] font-mono text-xs px-1.5 py-0.5 rounded border border-[#252836]">$1</code>')
+        .replace(/\n\n/gim, '</p><p class="mt-2">');
+      return '<p>' + html + '</p>';
+    }
+  </script>
+</body>
+</html>
