@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+python-multipart
+supabase
+PyMuPDF
+google-genai
+openai
+pytest
+pytest-asyncio

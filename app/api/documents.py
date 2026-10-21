@@ -2,7 +2,7 @@ import os
 import shutil
 import logging
 from typing import Optional, List
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Header
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from app.core.config import settings
 from app.core.supabase import get_supabase_client
 from app.documents.parser import document_parser
@@ -16,11 +16,10 @@ _local_docs = []
 
 @router.post("/upload")
 async def upload_document(
+    request: Request,
     file: UploadFile = File(...),
-    user_id: Optional[str] = Form("dev-user-01"),
-    x_user_id: Optional[str] = Header(None),
 ):
-    uid = x_user_id or user_id or "dev-user-01"
+    uid = request.state.user_id
     filename = file.filename or "uploaded_file"
     ext = os.path.splitext(filename)[1].lower()
 
@@ -44,7 +43,7 @@ async def upload_document(
         raw_chunks = [c.to_dict() for c in chunks]
 
         # Register chunks in local search engine cache
-        document_search.register_local_chunks(raw_chunks)
+        document_search.register_local_chunks(raw_chunks, user_id=uid)
 
         # Persist to Supabase if available
         client = get_supabase_client()
@@ -80,6 +79,7 @@ async def upload_document(
 
         doc_summary = {
             "id": doc_id or f"local-{len(_local_docs) + 1}",
+            "user_id": uid,
             "filename": filename,
             "file_size": file_size,
             "total_pages": len(pages),
@@ -98,8 +98,8 @@ async def upload_document(
         raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}")
 
 @router.get("/")
-async def list_documents(user_id: Optional[str] = "dev-user-01", x_user_id: Optional[str] = Header(None)):
-    uid = x_user_id or user_id or "dev-user-01"
+async def list_documents(request: Request):
+    uid = request.state.user_id
     client = get_supabase_client()
     if client and uid:
         try:
@@ -109,5 +109,11 @@ async def list_documents(user_id: Optional[str] = "dev-user-01", x_user_id: Opti
         except Exception as e:
             logger.warning(f"Failed to query Supabase documents: {e}")
 
-    return {"documents": _local_docs}
+    return {
+        "documents": [
+            {key: value for key, value in document.items() if key != "user_id"}
+            for document in _local_docs
+            if document["user_id"] == uid
+        ]
+    }
 

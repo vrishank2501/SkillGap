@@ -9,6 +9,8 @@
 
 ### `app/main.py`
 - FastAPI app with CORS middleware
+- Supabase bearer-token middleware validates protected API requests and attaches the verified user ID
+- Public `/api/auth/config` endpoint exposes only the Supabase URL and anon key needed by the browser client
 - Static file serving for the single-page UI at `/`
 - All routers registered: `chat`, `documents`, `progress`, `providers`, `health`
 
@@ -18,6 +20,7 @@
 
 ### `app/core/supabase.py`
 - Lazy Supabase client factory (`get_supabase_client()`)
+- Auth client validates access tokens with Supabase and returns the verified user
 - Gracefully returns `None` if credentials not configured (app still works locally)
 
 ---
@@ -51,8 +54,9 @@
 
 ## 3. API Endpoints
 
-### `POST /api/chat/`
-- Accepts: `message`, `provider`, `api_key`, `model`, `session_id`, `user_id`
+### `POST /api/chat`
+- Requires a valid Supabase bearer token; user identity is read from the verified token
+- Accepts: `message`, `provider`, `api_key`, `model`, `session_id`
 - Resolves API key (BYO > `.env` default > error)
 - Routes to Command Router → selects skill → builds prompt → calls LLM
 - Handles `/progress` and `/recommend` commands without LLM calls
@@ -81,6 +85,8 @@
 
 ### `GET /api/health`
 - Health check endpoint
+
+All other API routes require `Authorization: Bearer <access_token>`. Documents, progress, and local fallback data are scoped to the authenticated user.
 
 ---
 
@@ -168,4 +174,17 @@ Single-file dark-mode UI (~900 lines, Tailwind CSS via CDN, Vanilla JS):
 | `test_harness.py` | Skill loading, command routing, prompt building |
 | `test_parser.py` | PDF chunk extraction |
 | `test_progress.py` | Progress summary and recommendation logic |
+| `test_auth.py` | Bearer token enforcement and trusted user identity |
+
+---
+
+## 10. Supabase Authentication & Workspace Setup
+
+- Email/password sign-up, sign-in, session restore, and sign-out in `app/ui/index.html`
+- All protected frontend requests include the current Supabase access token
+- Backend validates tokens with Supabase Auth; client-provided user IDs are not trusted
+- Local document search and progress fallbacks are isolated per authenticated user
+- `supabase/migrations/002_auth_profiles.sql` creates profiles on signup and backfills existing Auth users
+- `WORKSPACE_SETUP.md` documents first-time setup, each workspace reopen, Supabase configuration, migrations, tests, and troubleshooting
+- Configure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and the backend-only `SUPABASE_SERVICE_ROLE_KEY` in the local, gitignored `.env`
 

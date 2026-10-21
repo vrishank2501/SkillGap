@@ -11,9 +11,9 @@ class DocumentSearchEngine:
     def __init__(self):
         self._local_chunks: List[Dict[str, Any]] = []
 
-    def register_local_chunks(self, chunks: List[Dict[str, Any]]):
+    def register_local_chunks(self, chunks: List[Dict[str, Any]], user_id: Optional[str] = None):
         """Allows testing retrieval in memory without active Supabase instance."""
-        self._local_chunks.extend(chunks)
+        self._local_chunks.extend({**chunk, "user_id": user_id} for chunk in chunks)
 
     async def search(
         self,
@@ -52,25 +52,32 @@ class DocumentSearchEngine:
                 logger.warning(f"Supabase text_search failed: {e}. Falling back to keyword search.")
 
         # 2. In-memory keyword scoring fallback
-        return self._keyword_search(query, top_k)
+        return self._keyword_search(query, top_k, user_id)
 
-    def _keyword_search(self, query: str, top_k: int) -> List[Dict[str, Any]]:
-        if not self._local_chunks:
+    def _keyword_search(self, query: str, top_k: int, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        user_chunks = [
+            chunk for chunk in self._local_chunks
+            if user_id is None or chunk.get("user_id") == user_id
+        ]
+        if not user_chunks:
             return []
 
         query_tokens = set(re.findall(r"\w+", query.lower()))
         if not query_tokens:
-            return self._local_chunks[:top_k]
+            return user_chunks[:top_k]
 
         scored = []
-        for chunk in self._local_chunks:
+        for chunk in user_chunks:
             content_tokens = set(re.findall(r"\w+", chunk.get("content", "").lower()))
             overlap = len(query_tokens.intersection(content_tokens))
             if overlap > 0:
                 scored.append((overlap, chunk))
 
         scored.sort(key=lambda x: x[0], reverse=True)
-        return [item[1] for item in scored[:top_k]]
+        return [
+            {key: value for key, value in item[1].items() if key != "user_id"}
+            for item in scored[:top_k]
+        ]
 
 document_search = DocumentSearchEngine()
 

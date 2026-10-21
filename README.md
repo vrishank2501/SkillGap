@@ -36,6 +36,8 @@
 
 ## 🚀 Quick Start
 
+For first-time setup and the steps to follow each time you reopen this workspace, see [WORKSPACE_SETUP.md](WORKSPACE_SETUP.md).
+
 ### 1. Clone & Install
 
 ```bash
@@ -53,11 +55,16 @@ cp .env.example .env
 
 ### 3. Set Up Database
 
-Run the migration in your Supabase SQL editor:
+Run both migrations in order in your Supabase SQL editor:
 
 ```
 supabase/migrations/001_initial.sql
+supabase/migrations/002_auth_profiles.sql
 ```
+
+In the Supabase dashboard, enable the Email provider and set `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in `.env`. The anon key initializes browser sign-in; the backend validates each access token with Supabase Auth. The service-role key is used only by the backend and must never be exposed in the browser or committed. New auth users are inserted into `profiles` by the second migration.
+
+Users can then create an account or sign in from the app. If email confirmation is enabled in Supabase, they must confirm their address before signing in.
 
 ### 4. Run the App
 

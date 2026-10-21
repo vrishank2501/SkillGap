@@ -16,7 +16,7 @@ class SupabaseProgressManager:
     def __init__(self):
         # In-memory storage fallback for local development without Supabase credentials
         self._memory_quizzes: List[Dict[str, Any]] = []
-        self._memory_progress: Dict[str, Dict[str, Any]] = {}
+        self._memory_progress: Dict[tuple[str, str], Dict[str, Any]] = {}
 
     async def record_quiz_attempt(
         self,
@@ -106,7 +106,10 @@ class SupabaseProgressManager:
             "percentage": percentage,
         }
         self._memory_quizzes.append(attempt)
-        prog = self._memory_progress.setdefault(topic, {"quizzes_taken": 0, "best_score": 0.0, "status": "in_progress"})
+        prog = self._memory_progress.setdefault(
+            (user_id, topic),
+            {"quizzes_taken": 0, "best_score": 0.0, "status": "in_progress"},
+        )
         prog["quizzes_taken"] += 1
         prog["best_score"] = max(prog["best_score"], percentage)
         if prog["best_score"] >= 70.0:
@@ -146,20 +149,26 @@ class SupabaseProgressManager:
                 logger.error(f"Failed to fetch Supabase progress: {e}")
 
         # Fallback from memory
-        total_topics = len(self._memory_progress)
-        completed = [t for t, d in self._memory_progress.items() if d["status"] == "completed"]
+        user_progress = {
+            topic: progress
+            for (owner_id, topic), progress in self._memory_progress.items()
+            if owner_id == user_id
+        }
+        user_quizzes = [quiz for quiz in self._memory_quizzes if quiz["user_id"] == user_id]
+        total_topics = len(user_progress)
+        completed = [topic for topic, data in user_progress.items() if data["status"] == "completed"]
         avg_score = 0.0
-        if self._memory_quizzes:
-            avg_score = round(sum(q["percentage"] for q in self._memory_quizzes) / len(self._memory_quizzes), 1)
+        if user_quizzes:
+            avg_score = round(sum(quiz["percentage"] for quiz in user_quizzes) / len(user_quizzes), 1)
 
         return {
             "total_topics_studied": total_topics,
             "completed_topics": completed,
-            "quizzes_attempted": len(self._memory_quizzes),
+            "quizzes_attempted": len(user_quizzes),
             "average_score": avg_score,
-            "active_streak_days": 1 if self._memory_quizzes else 0,
-            "recent_attempts": self._memory_quizzes[-5:],
-            "all_topics": [{"topic_name": k, **v} for k, v in self._memory_progress.items()],
+            "active_streak_days": 1 if user_quizzes else 0,
+            "recent_attempts": user_quizzes[-5:],
+            "all_topics": [{"topic_name": topic, **progress} for topic, progress in user_progress.items()],
         }
 
     async def get_recommendation(self, user_id: str) -> Dict[str, Any]:

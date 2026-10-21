@@ -53,6 +53,36 @@
 
 <body class="bg-[#0F1117] font-sans text-[#E2E8F0] antialiased min-h-screen selection:bg-[#6366F1]/30 selection:text-white flex flex-col">
 
+  <div id="auth-screen" class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0F1117] px-4 py-8">
+    <section class="w-full max-w-md rounded-2xl border border-[#2D3142] bg-[#161821] p-7 shadow-2xl">
+      <div class="mb-6 flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6366F1] text-white">
+          <span class="material-symbols-outlined">psychology</span>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white">SkillBridge AI</h1>
+          <p class="font-mono text-[10px] uppercase tracking-wider text-[#818CF8]">Your learning workspace</p>
+        </div>
+      </div>
+      <h2 id="auth-title" class="mb-1 text-xl font-semibold">Sign in</h2>
+      <p class="mb-5 text-sm text-[#94A3B8]">Use your account to access your study materials and progress.</p>
+      <div id="auth-config-warning" class="mb-4 hidden rounded-lg border border-amber-700/60 bg-amber-950/40 p-3 text-sm text-amber-200" role="alert"></div>
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-4">
+        <label class="flex flex-col gap-1.5 text-xs font-medium text-[#CBD5E1]">
+          Email
+          <input id="auth-email" type="email" autocomplete="email" required class="rounded-lg border border-[#2D3142] bg-[#0F1117] px-3 py-2.5 text-sm text-white outline-none focus:border-[#818CF8]" placeholder="you@example.com"/>
+        </label>
+        <label class="flex flex-col gap-1.5 text-xs font-medium text-[#CBD5E1]">
+          Password
+          <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required class="rounded-lg border border-[#2D3142] bg-[#0F1117] px-3 py-2.5 text-sm text-white outline-none focus:border-[#818CF8]" placeholder="At least 6 characters"/>
+        </label>
+        <button id="auth-submit" type="submit" class="mt-1 rounded-lg bg-[#6366F1] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#4F46E5]">Sign in</button>
+      </form>
+      <p id="auth-feedback" class="mt-4 min-h-5 text-sm text-[#94A3B8]" role="status" aria-live="polite"></p>
+      <button id="auth-mode-toggle" onclick="toggleAuthMode()" class="mt-2 text-sm text-[#A5B4FC] hover:text-white">Create an account</button>
+    </section>
+  </div>
+
   <!-- ==================== FIXED TOP NAVIGATION ==================== -->
   <header class="fixed top-0 left-0 right-0 z-50 bg-[#161821]/95 backdrop-blur-xl border-b border-[#252836] shadow-sm">
     <div class="h-16 w-full px-6 flex items-center justify-between gap-4">
@@ -110,16 +140,11 @@
           </button>
         </div>
 
-        <!-- Demo Mode Pill (Zero API Key Required) -->
-        <button id="demo-btn" onclick="selectProvider('demo')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#252836] bg-[#1A1D27] hover:bg-[#1E2230] text-xs font-mono transition-all text-[#94A3B8]" title="Test all skills without an API key">
-          <span id="demo-dot" class="w-2 h-2 rounded-full bg-[#64748B]"></span>
-          <span>Demo Mode</span>
+        <button onclick="createNewSession()" class="p-2 rounded-lg border border-[#252836] bg-[#1A1D27] hover:bg-[#1E2230] text-[#94A3B8] hover:text-white transition-colors shrink-0" title="New chat (Ctrl+K)" aria-label="New chat" type="button">
+          <span class="material-symbols-outlined text-[18px]">add_comment</span>
         </button>
-
-        <!-- Quick Stats Pill (XP / Streak) -->
-        <button onclick="openProgressModal()" class="flex items-center gap-2 bg-[#1E2230] hover:bg-[#252A3D] px-3 py-1.5 rounded-xl border border-[#2D3142] text-xs font-mono transition-all text-[#34D399] shadow-sm">
-          <span class="material-symbols-outlined text-[16px] text-amber-400">local_fire_department</span>
-          <span id="streak-indicator">1 Day Streak</span>
+        <button id="sign-out-button" onclick="signOut()" class="hidden p-2 rounded-lg border border-[#252836] bg-[#1A1D27] hover:bg-[#1E2230] text-[#94A3B8] hover:text-white transition-colors shrink-0" title="Sign out" aria-label="Sign out" type="button">
+          <span class="material-symbols-outlined text-[18px]">logout</span>
         </button>
       </div>
 
@@ -129,60 +154,8 @@
   <!-- ==================== MAIN WORKSPACE ==================== -->
   <div class="flex-1 flex pt-16">
 
-    <!-- LEFT SIDEBAR -->
-    <aside class="fixed left-0 top-16 bottom-0 w-64 bg-[#161821] border-r border-[#252836] z-40 hidden lg:flex flex-col justify-between py-4 px-3 custom-scroll">
-      <div class="flex flex-col h-full gap-4">
-        
-        <!-- New Chat Button -->
-        <div class="px-1">
-          <button onclick="createNewSession()" class="group flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-[#1A1D27] hover:bg-[#1E2230] border border-[#252836] text-[#E2E8F0] transition-all shadow-sm" type="button">
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-[20px] text-[#818CF8]">add_circle</span>
-              <span class="text-sm font-semibold text-[#E2E8F0]">New Chat</span>
-            </div>
-            <kbd class="font-mono text-[11px] text-[#94A3B8] bg-[#0F1117] border border-[#252836] px-1.5 py-0.5 rounded">⌘K</kbd>
-          </button>
-        </div>
-
-        <!-- Previous Chats Section -->
-        <div class="flex-1 flex flex-col min-h-0 overflow-y-auto px-1 custom-scroll">
-          <div class="flex items-center justify-between px-1 mb-2">
-            <span class="font-mono text-[11px] uppercase tracking-wider text-[#64748B]">Sessions</span>
-            <span class="text-[10px] text-[#818CF8] cursor-pointer hover:underline" onclick="clearSessions()">Clear</span>
-          </div>
-
-          <div id="session-list" class="flex flex-col gap-1.5">
-            <!-- Dynamic session items appear here -->
-            <div id="session-empty" class="text-xs text-[#64748B] italic p-2 text-center">
-              No sessions yet. Type a command or ask a question to begin.
-            </div>
-          </div>
-        </div>
-
-        <!-- Uploaded Document Library Card -->
-        <div class="p-3 bg-[#1A1D27] border border-[#252836] rounded-xl flex flex-col gap-2">
-          <div class="flex items-center justify-between">
-            <span class="font-mono text-xs text-[#94A3B8] flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[16px] text-[#818CF8]">folder_open</span>
-              Study Library
-            </span>
-            <span id="doc-count-badge" class="bg-[#1E2230] text-[10px] font-mono px-2 py-0.5 rounded text-[#818CF8]">0 files</span>
-          </div>
-          <div id="sidebar-doc-list" class="text-xs text-[#64748B] flex flex-col gap-1 max-h-24 overflow-y-auto custom-scroll">
-            <span class="italic text-[11px]">No study documents uploaded yet.</span>
-          </div>
-          <label class="cursor-pointer flex items-center justify-center gap-1.5 text-xs text-[#818CF8] hover:text-[#A5B4FC] bg-[#161821] hover:bg-[#1E2230] py-1.5 px-2 rounded-lg border border-[#252836] transition-colors">
-            <span class="material-symbols-outlined text-[15px]">upload_file</span>
-            <span>Upload Material</span>
-            <input id="sidebar-file-input" type="file" accept=".pdf,.txt,.md" class="hidden" onchange="handleFileUpload(event)"/>
-          </label>
-        </div>
-
-      </div>
-    </aside>
-
     <!-- CENTER CHAT & CANVAS -->
-    <main class="flex-1 lg:pl-64 min-h-[calc(100vh-4rem)] bg-[#0F1117] flex flex-col">
+    <main class="flex-1 min-h-[calc(100vh-4rem)] bg-[#0F1117] flex flex-col">
       <div class="relative w-full flex-1 max-w-3xl mx-auto flex flex-col justify-between p-6 pb-40">
         
         <!-- Conversation Feed -->
@@ -246,7 +219,7 @@
       </div>
 
       <!-- ==================== FLOATING COMMAND DOCK ==================== -->
-      <div class="fixed bottom-4 left-0 right-0 lg:left-64 z-30 px-4 md:px-6 flex justify-center pointer-events-none">
+      <div class="fixed bottom-4 left-0 right-0 z-30 px-4 md:px-6 flex justify-center pointer-events-none">
         <div class="w-full max-w-3xl flex flex-col gap-2 pointer-events-auto">
           
           <!-- Command Suggestions Pill Shelf -->
@@ -340,16 +313,19 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- ==================== CLIENT JAVASCRIPT ==================== -->
   <script>
     // State management
     let currentProvider = "gemini";
     let activeSessionId = "session-" + Date.now();
-    let currentUserId = "dev-user-01";
-    let sessionCount = 0;
+    let currentUserId = null;
+    let supabaseClient = null;
+    let authMode = "login";
 
     // Initialize API keys from localStorage
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
       const savedGemini = localStorage.getItem("skillbridge_gemini_key");
       const savedOpenAI = localStorage.getItem("skillbridge_openai_key");
       if (savedGemini) {
@@ -360,9 +336,6 @@
         document.getElementById("openai-key").value = savedOpenAI;
         if (!savedGemini) selectProvider("openai");
       }
-      refreshDocumentList();
-      refreshProgress();
-
       // Keyboard shortcut ⌘K / Ctrl+K
       document.addEventListener("keydown", (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -370,7 +343,102 @@
           createNewSession();
         }
       });
+
+      await initializeSupabaseAuth();
     });
+
+    async function initializeSupabaseAuth() {
+      const configWarning = document.getElementById("auth-config-warning");
+      try {
+        const response = await fetch("/api/auth/config");
+        if (!response.ok) throw new Error("Could not load authentication settings.");
+        const config = await response.json();
+        if (!config.supabase_url || !config.supabase_anon_key) {
+          configWarning.innerText = "Supabase Auth is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env, then restart the app.";
+          configWarning.classList.remove("hidden");
+          document.getElementById("auth-submit").disabled = true;
+          document.getElementById("auth-mode-toggle").disabled = true;
+          return;
+        }
+        if (!window.supabase?.createClient) throw new Error("Supabase Auth could not load. Check your network and reload.");
+
+        supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+        supabaseClient.auth.onAuthStateChange((_event, session) => {
+          setTimeout(() => applyAuthSession(session), 0);
+        });
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) throw error;
+        applyAuthSession(data.session);
+      } catch (error) {
+        configWarning.innerText = error.message || "Could not initialize Supabase Auth.";
+        configWarning.classList.remove("hidden");
+        document.getElementById("auth-submit").disabled = true;
+        document.getElementById("auth-mode-toggle").disabled = true;
+      }
+    }
+
+    function applyAuthSession(session) {
+      const userId = session?.user?.id || null;
+      const changedUser = userId && userId !== currentUserId;
+      currentUserId = userId;
+      document.getElementById("auth-screen").classList.toggle("hidden", Boolean(session));
+      document.getElementById("sign-out-button").classList.toggle("hidden", !session);
+      document.getElementById("sign-out-button").title = session?.user?.email || "Sign out";
+      if (changedUser) refreshProgress();
+      if (!session) createNewSession();
+    }
+
+    async function apiFetch(url, options = {}) {
+      if (!supabaseClient) throw new Error("Supabase Auth is not initialized.");
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      if (!data.session) throw new Error("Your session expired. Sign in again.");
+      const headers = new Headers(options.headers || {});
+      headers.set("Authorization", `Bearer ${data.session.access_token}`);
+      return fetch(url, { ...options, headers });
+    }
+
+    function toggleAuthMode() {
+      authMode = authMode === "login" ? "signup" : "login";
+      document.getElementById("auth-title").innerText = authMode === "login" ? "Sign in" : "Create your account";
+      document.getElementById("auth-submit").innerText = authMode === "login" ? "Sign in" : "Create account";
+      document.getElementById("auth-mode-toggle").innerText = authMode === "login" ? "Create an account" : "Already have an account? Sign in";
+      document.getElementById("auth-password").autocomplete = authMode === "login" ? "current-password" : "new-password";
+      document.getElementById("auth-feedback").innerText = "";
+    }
+
+    async function handleAuthSubmit(event) {
+      event.preventDefault();
+      if (!supabaseClient) return;
+      const email = document.getElementById("auth-email").value.trim();
+      const password = document.getElementById("auth-password").value;
+      const submitButton = document.getElementById("auth-submit");
+      const feedback = document.getElementById("auth-feedback");
+      submitButton.disabled = true;
+      feedback.innerText = authMode === "login" ? "Signing in..." : "Creating account...";
+
+      try {
+        const result = authMode === "login"
+          ? await supabaseClient.auth.signInWithPassword({ email, password })
+          : await supabaseClient.auth.signUp({ email, password });
+        if (result.error) throw result.error;
+        if (result.data.session) {
+          applyAuthSession(result.data.session);
+        } else {
+          feedback.innerText = "Account created. Check your email to confirm your address, then sign in.";
+        }
+      } catch (error) {
+        feedback.innerText = error.message || "Authentication failed.";
+      } finally {
+        submitButton.disabled = false;
+      }
+    }
+
+    async function signOut() {
+      if (!supabaseClient) return;
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) showToast(error.message, "error");
+    }
 
     function selectProvider(provider) {
       currentProvider = provider;
@@ -444,7 +512,7 @@
       btn.innerHTML = `<span class="material-symbols-outlined text-[15px] animate-spin">refresh</span>`;
 
       try {
-        const res = await fetch("/api/providers/validate", {
+        const res = await apiFetch("/api/providers/validate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -510,8 +578,6 @@
 
       input.value = "";
       
-      // Ensure session is registered in sidebar
-      registerActiveSession(text);
       appendUserMessage(text);
 
       const geminiKey = document.getElementById("gemini-key").value.trim();
@@ -522,7 +588,7 @@
       const activeModel = currentProvider === "gemini" ? geminiModel : openaiModel;
 
       if (currentProvider !== "demo" && (!activeKey || activeKey === "AIzaSy..." || activeKey === "sk-...")) {
-        appendErrorMessage(`⚠️ Please enter your ${currentProvider.toUpperCase()} API key in the top navigation bar, or click 'Demo Mode' to test without an API key.`);
+        appendErrorMessage(`⚠️ Please enter your ${currentProvider.toUpperCase()} API key in the top navigation bar.`);
         const targetInput = document.getElementById(`${currentProvider}-key`);
         if (targetInput) targetInput.focus();
         return;
@@ -534,13 +600,12 @@
         api_key: activeKey,
         model: activeModel,
         session_id: activeSessionId,
-        user_id: currentUserId,
       };
 
       const loaderId = appendTypingIndicator();
 
       try {
-        const res = await fetch("/api/chat", {
+        const res = await apiFetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -568,27 +633,6 @@
       } catch (err) {
         removeTypingIndicator(loaderId);
         appendErrorMessage("Network error: " + err.message);
-      }
-    }
-
-    function registerActiveSession(firstMessage) {
-      const emptyEl = document.getElementById("session-empty");
-      if (emptyEl) emptyEl.remove();
-
-      if (sessionCount === 0) {
-        sessionCount++;
-        const list = document.getElementById("session-list");
-        const title = firstMessage.length > 25 ? firstMessage.substring(0, 25) + "..." : firstMessage;
-        const item = document.createElement("div");
-        item.className = "flex items-center justify-between p-2.5 rounded-xl bg-[#1E2230] border border-[#2D3142] text-[#E2E8F0] font-medium cursor-pointer shadow-sm";
-        item.innerHTML = `
-          <div class="flex flex-col min-w-0 pr-2">
-            <span class="text-sm truncate font-semibold text-[#E2E8F0]">${escapeHtml(title)}</span>
-            <span class="font-mono text-[11px] text-[#818CF8]">Active Session</span>
-          </div>
-          <span class="material-symbols-outlined text-[18px] text-[#818CF8]">chat_bubble</span>
-        `;
-        list.prepend(item);
       }
     }
 
@@ -738,11 +782,10 @@
       }
 
       try {
-        await fetch("/api/progress/quiz", {
+        await apiFetch("/api/progress/quiz", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            user_id: currentUserId,
             topic: topic || "Quiz",
             score: isCorrect ? 1 : 0,
             total_questions: 1,
@@ -761,14 +804,12 @@
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("user_id", currentUserId);
 
-      registerActiveSession(`Uploaded ${file.name}`);
       appendUserMessage(`📎 Uploaded document: ${file.name}`);
       const loaderId = appendTypingIndicator();
 
       try {
-        const res = await fetch("/api/documents/upload", {
+        const res = await apiFetch("/api/documents/upload", {
           method: "POST",
           body: formData
         });
@@ -781,7 +822,6 @@
             command_used: "/upload",
             skill_name: "Document Ingestion"
           });
-          refreshDocumentList();
         } else {
           appendErrorMessage("Failed to upload document.");
         }
@@ -791,34 +831,12 @@
       }
     }
 
-    async function refreshDocumentList() {
-      try {
-        const res = await fetch(`/api/documents/?user_id=${currentUserId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const docs = data.documents || [];
-        document.getElementById("doc-count-badge").innerText = `${docs.length} files`;
-        const listEl = document.getElementById("sidebar-doc-list");
-        if (docs.length === 0) {
-          listEl.innerHTML = `<span class="italic text-[11px]">No study documents uploaded yet.</span>`;
-        } else {
-          listEl.innerHTML = docs.map(d => `
-            <div class="flex items-center justify-between p-1.5 rounded bg-[#161821] px-2 truncate border border-[#252836]">
-              <span class="truncate font-mono text-[11px] text-[#E2E8F0]">${escapeHtml(d.filename)}</span>
-            </div>
-          `).join('');
-        }
-      } catch (err) {
-        console.warn("Failed to fetch documents:", err);
-      }
-    }
-
     async function refreshProgress() {
+      if (!currentUserId) return;
       try {
-        const res = await fetch(`/api/progress/summary?user_id=${currentUserId}`);
+        const res = await apiFetch("/api/progress/summary");
         if (!res.ok) return;
         const data = await res.json();
-        document.getElementById("streak-indicator").innerText = `${data.active_streak_days || 1} Day Streak`;
         document.getElementById("metric-quizzes").innerText = data.quizzes_attempted || 0;
         document.getElementById("metric-accuracy").innerText = `${data.average_score || 0}%`;
         document.getElementById("metric-topics").innerText = data.completed_topics?.length || 0;
@@ -840,19 +858,12 @@
 
     function createNewSession() {
       activeSessionId = "session-" + Date.now();
-      sessionCount = 0;
       const feed = document.getElementById("chat-feed");
       // Keep only the welcome banner
       const banner = document.getElementById("welcome-banner");
       feed.innerHTML = "";
       if (banner) feed.appendChild(banner);
       document.getElementById("chat-input").focus();
-    }
-
-    function clearSessions() {
-      const list = document.getElementById("session-list");
-      list.innerHTML = `<div id="session-empty" class="text-xs text-[#64748B] italic p-2 text-center">No sessions yet. Type a command to begin.</div>`;
-      createNewSession();
     }
 
     function openProgressModal() {

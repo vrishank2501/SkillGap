@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Request
 from app.core.config import settings
 from app.core.supabase import get_supabase_client
 from app.providers import get_provider
@@ -20,7 +20,6 @@ class ChatRequest(BaseModel):
     api_key: Optional[str] = None
     model: Optional[str] = None
     session_id: Optional[str] = None
-    user_id: Optional[str] = "dev-user-01"
 
 class ChatResponse(BaseModel):
     response: str
@@ -30,13 +29,13 @@ class ChatResponse(BaseModel):
     structured_data: Optional[Dict[str, Any]] = None
     session_id: Optional[str] = None
 
-@router.post("/", response_model=ChatResponse)
-async def handle_chat(request: ChatRequest, x_user_id: Optional[str] = Header(None)):
-    uid = x_user_id or request.user_id or "dev-user-01"
-    provider_name = (request.provider or "gemini").lower()
+@router.post("", response_model=ChatResponse)
+async def handle_chat(payload: ChatRequest, request: Request):
+    uid = request.state.user_id
+    provider_name = (payload.provider or "gemini").lower()
     
     # 1. Resolve API key
-    api_key = (request.api_key or "").strip()
+    api_key = (payload.api_key or "").strip()
     if api_key in ["••••••••••••••••", "AIzaSy...", "sk-..."]:
         api_key = ""
 
@@ -47,7 +46,7 @@ async def handle_chat(request: ChatRequest, x_user_id: Optional[str] = Header(No
             api_key = settings.DEFAULT_OPENAI_API_KEY
 
     # 2. Parse command via Command Router
-    parsed = command_router.parse(request.message)
+    parsed = command_router.parse(payload.message)
     cmd = parsed.command
     skill = parsed.skill
 
@@ -68,7 +67,7 @@ async def handle_chat(request: ChatRequest, x_user_id: Optional[str] = Header(No
             command_used=cmd,
             skill_name="get_learning_progress",
             structured_data=summary,
-            session_id=request.session_id,
+            session_id=payload.session_id,
         )
 
     # 4. Direct /recommend command handler
@@ -85,7 +84,7 @@ async def handle_chat(request: ChatRequest, x_user_id: Optional[str] = Header(No
             command_used=cmd,
             skill_name="recommend_next_lesson",
             structured_data=rec,
-            session_id=request.session_id,
+            session_id=payload.session_id,
         )
 
     # If calling LLM is required, ensure API key is present (unless demo mode)
@@ -96,7 +95,7 @@ async def handle_chat(request: ChatRequest, x_user_id: Optional[str] = Header(No
         )
 
     try:
-        ai_provider = get_provider(provider_name, api_key=api_key, model=request.model)
+        ai_provider = get_provider(provider_name, api_key=api_key, model=payload.model)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to initialize {provider_name.upper()} provider: {str(e)}")
 
@@ -145,7 +144,7 @@ async def handle_chat(request: ChatRequest, x_user_id: Optional[str] = Header(No
                 skill_name="generate_quiz",
                 citations=excerpts,
                 structured_data=quiz_data,
-                session_id=request.session_id,
+                session_id=payload.session_id,
             )
         except Exception as e:
             logger.error(f"Error generating quiz JSON: {e}")
@@ -159,21 +158,21 @@ async def handle_chat(request: ChatRequest, x_user_id: Optional[str] = Header(No
                     command_used=cmd,
                     skill_name="generate_quiz",
                     citations=excerpts,
-                    session_id=request.session_id,
+                    session_id=payload.session_id,
                 )
             except Exception as e2:
                 err_str = str(e2)
                 raise HTTPException(status_code=400, detail=f"{provider_name.upper()} API error: {err_str}")
 
     # 6. General /explain, /answer, /summarize, or natural chat
-    search_query = parsed.parsed_params.get("topic") or parsed.parsed_params.get("query") or request.message
+    search_query = parsed.parsed_params.get("topic") or parsed.parsed_params.get("query") or payload.message
     excerpts = await document_search.search(query=search_query, user_id=uid, top_k=4)
 
     system_instruction = prompt_builder.build_system_instruction(
         skill_instructions=skill.instructions if skill else None
     )
     user_prompt = prompt_builder.build_user_prompt(
-        user_input=request.message,
+        user_input=payload.message,
         document_excerpts=excerpts,
         parsed_params=parsed.parsed_params
     )
@@ -203,11 +202,11 @@ async def handle_chat(request: ChatRequest, x_user_id: Optional[str] = Header(No
 
     # Save to Supabase messages if client connected
     client = get_supabase_client()
-    if client and request.session_id:
+    if client and payload.session_id:
         try:
             client.table("messages").insert([
-                {"session_id": request.session_id, "role": "user", "content": request.message, "command_used": cmd},
-                {"session_id": request.session_id, "role": "assistant", "content": ai_text, "command_used": cmd}
+                {"session_id": payload.session_id, "role": "user", "content": payload.message, "command_used": cmd},
+                {"session_id": payload.session_id, "role": "assistant", "content": ai_text, "command_used": cmd}
             ]).execute()
         except Exception as e:
             logger.warning(f"Could not persist messages to Supabase: {e}")
@@ -217,6 +216,6 @@ async def handle_chat(request: ChatRequest, x_user_id: Optional[str] = Header(No
         command_used=cmd,
         skill_name=skill.name if skill else None,
         citations=excerpts,
-        session_id=request.session_id,
+        session_id=payload.session_id,
     )
 
